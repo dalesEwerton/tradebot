@@ -2,9 +2,10 @@ import time
 import sys, getopt
 import datetime
 from poloniex import poloniex
+import matplotlib.pyplot as plt
 
 def main(argv):
-	period = 1
+	period = 0.5
 	pair = "BTC_XMR"
 	prices = []
 	currentMovingAverage = 0;
@@ -16,7 +17,10 @@ def main(argv):
 	typeOfTrade = False
 	dataDate = ""
 	orderNumber = ""
-
+	initialPrice = 0;
+	orderBuyed = 0;
+	profit = []
+	
 	try:
 		opts, args = getopt.getopt(argv,"hp:c:n:s:e:",["period=","currency=","points="])
 	except getopt.GetoptError:
@@ -61,35 +65,25 @@ def main(argv):
 			currentValues = conn.api_query("returnTicker")
 			lastPairPrice = currentValues[pair]["last"]
 			dataDate = datetime.datetime.now()
+			
 
 		if (len(prices) > 0):
 			currentMovingAverage = sum(prices) / float(len(prices))
-			previousPrice = prices[-1]
-			if (not tradePlaced):
-				if ( (lastPairPrice > currentMovingAverage) and (lastPairPrice < previousPrice) ):
-					print "SELL ORDER"
-					orderNumber = conn.sell(pair,lastPairPrice,.01)
-					tradePlaced = True
-					typeOfTrade = "short"
-				elif ( (lastPairPrice < currentMovingAverage) and (lastPairPrice > previousPrice) ):
-					print "BUY ORDER"
-					orderNumber = conn.buy(pair,lastPairPrice,.01)
-					tradePlaced = True
-					typeOfTrade = "long"
-			elif (typeOfTrade == "short"):
-				if ( lastPairPrice < currentMovingAverage ):
-					print "EXIT TRADE"
-					conn.cancel(pair,orderNumber)
-					tradePlaced = False
-					typeOfTrade = False
-			elif (typeOfTrade == "long"):
-				if ( lastPairPrice > currentMovingAverage ):
-					print "EXIT TRADE"
-					conn.cancel(pair,orderNumber)
-					tradePlaced = False
-					typeOfTrade = False
-		else:
-			previousPrice = 0
+			
+		#Trading -- 3% Strategy
+		if(initialPrice == 0):
+			initialPrice =  float(lastPairPrice) - (float(lastPairPrice) * 0.03);
+			print "Initial order price: " + str(initialPrice);
+		elif(initialPrice >= lastPairPrice):
+			print "BUY ORDER"
+			initialPrice = -1
+			orderBuyed = lastPairPrice + (lastPairPrice * 0.03);
+		elif(initialPrice == -1):
+			if(lastPairPrice >= orderBuyed):
+				print "SELL_ORDER"
+				profitAtual = (orderBuyed * 0.03) + (lastPairPrice - orderBuyed)
+				profit.append(sum(profit) + profitAtual)
+				plt.plot(profit)
 
 		print "%s Period: %ss %s: %s Moving Average: %s" % (dataDate,period,pair,lastPairPrice,currentMovingAverage)
 
