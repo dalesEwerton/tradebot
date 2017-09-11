@@ -2,7 +2,7 @@ import time
 import sys, getopt
 import datetime
 from poloniex import poloniex
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
 
 def main(argv):
 	period = 0.5
@@ -74,16 +74,21 @@ def main(argv):
 		if(initialPrice == 0):
 			initialPrice =  float(lastPairPrice) - (float(lastPairPrice) * 0.03);
 			print "Initial order price: " + str(initialPrice);
-		elif(initialPrice >= lastPairPrice):
+		elif(float(initialPrice) >= float(lastPairPrice)):
 			print "BUY ORDER"
 			initialPrice = -1
-			orderBuyed = lastPairPrice + (lastPairPrice * 0.03);
+			orderBuyed = float(lastPairPrice) + (float(lastPairPrice) * 0.03);
+		elif(initialPrice != -1 and len(prices) > 6 and prices[len(prices) -1] > prices[len(prices) -3]):
+				initialPrice = float(lastPairPrice)
 		elif(initialPrice == -1):
-			if(lastPairPrice >= orderBuyed):
+			if(float(lastPairPrice) >= float(orderBuyed)):
 				print "SELL_ORDER"
-				profitAtual = (orderBuyed * 0.03) + (lastPairPrice - orderBuyed)
+				profitAtual = (orderBuyed * 0.03) + (float(lastPairPrice) - orderBuyed)
 				profit.append(sum(profit) + profitAtual)
-				plt.plot(profit)
+				initialPrice = 0;
+				print profit[len(profit) -1]
+				#plt.plot(orderBuyed, profit[len(profit) -1])
+				#plt.show()
 
 		print "%s Period: %ss %s: %s Moving Average: %s" % (dataDate,period,pair,lastPairPrice,currentMovingAverage)
 
